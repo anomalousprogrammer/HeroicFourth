@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HeroicFourth – 4th Down Histograms</title>
+
+  <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Bulldog-anfas.svg/960px-Bulldog-anfas.svg.png?20091027223622" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      /* UGA-inspired palette */
+      --bg:#0a0a0a;
+      --panel:#111111;
+      --panel2:#151515;
+      --text:#f4f0e6;        /* warm off-white */
+      --muted:#c9c2b3;
+      --border:rgba(255,255,255,.10);
+      --accent:#ba0c2f;      /* UGA red */
+      --accent2:#1f1f1f;     /* black-ish */
+
+      /* chart accents */
+      --punt:#d9d9d9;        /* neutral "silver" */
+      --fg:#3a3a3a;          /* dark gray (was yellow/gold) */
+      --gfi:#ba0c2f;         /* red */
+
+      --shadow: 0 10px 30px rgba(0,0,0,.45);
+
+      --containerMax: 1200px;
+      --pagePad: 28px; /* expand gutters */
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      line-height:1.35;
+      background:
+        radial-gradient(900px 600px at 20% 0%, rgba(186,12,47,.20), transparent 55%),
+        radial-gradient(800px 600px at 90% 10%, rgba(255,255,255,.06), transparent 60%),
+        linear-gradient(180deg, #000 0%, #0a0a0a 60%, #070707 100%);
+    }
+
+    /* Top brand bar */
+    header{
+      max-width:none;
+      margin:0;
+      padding:0;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background:linear-gradient(90deg, rgba(186,12,47,.96), rgba(186,12,47,.84)),
+                 radial-gradient(1200px 300px at 30% 50%, rgba(0,0,0,.30), transparent 60%);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar{
+      max-width:var(--containerMax);
+      margin:0 auto;
+      padding:16px var(--pagePad);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+
+    .brandRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .dawgIcon{
+      width:28px;
+      height:28px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 auto;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+    }
+
+    .dawgIcon img{
+      width:28px;
+      height:28px;
+      display:block;
+      /* allow theme tinting for SVGs that use currentColor */
+      color: var(--accent);
+    }
+
+    h1{
+      margin:0;
+      font-size:20px;
+      letter-spacing:.4px;
+      text-transform:uppercase;
+      font-weight:900;
+      color:#fff;
+      text-align:left;
+    }
+
+    /* Page wrapper */
+    .wrap{
+      max-width: var(--containerMax);
+      margin: 0 auto;
+      padding: 16px var(--pagePad) 28px;
+    }
+
+    /* Controls */
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.35);
+      margin-top: 15px;
+    }
+
+    .controlGroup{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+
+    .selectWrap{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width: 200px;
+    }
+    .selectLabel{
+      font-size:11px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:rgba(244,240,230,.78);
+    }
+
+    select{
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.18);
+      color:var(--text);
+      padding:10px 40px 10px 12px;
+      border-radius:12px;
+      font:inherit;
+      font-size:13px;
+      outline:none;
+      cursor:pointer;
+      background-image:
+        linear-gradient(45deg, transparent 50%, rgba(244,240,230,.85) 50%),
+        linear-gradient(135deg, rgba(244,240,230,.85) 50%, transparent 50%),
+        linear-gradient(to right, rgba(255,255,255,.14), rgba(255,255,255,.14));
+      background-position:
+        calc(100% - 18px) calc(50% - 3px),
+        calc(100% - 13px) calc(50% - 3px),
+        calc(100% - 34px) 50%;
+      background-size:5px 5px, 5px 5px, 1px 18px;
+      background-repeat:no-repeat;
+    }
+
+    select:hover{ border-color: rgba(255,255,255,.28); }
+    select:focus{ border-color: rgba(186,12,47,.85); box-shadow: 0 0 0 3px rgba(186,12,47,.18); }
+
+    /* Keep buttons styling for future use */
+    button{
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.14);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      font:inherit;
+      font-size:13px;
+      outline:none;
+      cursor:pointer;
+    }
+
+    button:hover{ border-color:rgba(255,255,255,.26); }
+
+    /* Remove old pill styling visuals (no longer used) */
+    .pill{ display:none; }
+
+    /* Give the doughnut its own fixed-square canvas but keep the card width */
+    canvas{ width:100% !important; height:360px !important; }
+    #typeTotalsChart{ height:320px !important; }
+
+    .chartSquare{
+      width:100%;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+    .chartSquare canvas{
+      width:320px !important;
+      height:320px !important;
+    }
+
+    .grid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+    }
+
+    @media (min-width: 980px){
+      .grid{ grid-template-columns: 1fr 1fr; }
+      :root{ --pagePad: 36px; }
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      padding:12px;
+      box-shadow: 0 14px 34px rgba(0,0,0,.45);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      top:0; left:0; right:0;
+      height:3px;
+      background:linear-gradient(90deg, var(--accent), rgba(255,255,255,.10));
+      opacity:.95;
+    }
+
+    .card h2{ margin:6px 0 10px; font-size:14px; color:var(--text); letter-spacing:.2px; text-transform:uppercase; }
+    .hint{ color:var(--muted); font-size:12px; margin-bottom:10px; }
+
+    .introText{
+      color: rgba(244,240,230,.90);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .introGif{
+      margin: 14px 0 16px;
+      display:flex;
+      justify-content:center;
+    }
+
+    .introGif img{
+      max-width: 420px;
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.45);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .footer{
+      margin-top:14px;
+      color:rgba(244,240,230,.75);
+      font-size:12px;
+      text-align:center;
+    }
+
+    .error{
+      margin-top:14px;
+      padding:14px;
+      background:rgba(186,12,47,.12);
+      border:1px solid rgba(186,12,47,.30);
+      border-radius:14px;
+      color:var(--text);
+      display:none;
+    }
+
+    .error pre{ margin:8px 0 0; white-space:pre-wrap; color:rgba(244,240,230,.85); }
+
+    /* Ensure legend dots always have size + color */
+    .dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      display:inline-block;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.18);
+    }
+
+    .dot--punt{ background: var(--punt); }
+    .dot--fg{ background: var(--fg); }
+    .dot--gfi{ background: var(--gfi); }
+
+    .heroicList {
+      color: var(--text);
+      padding-left: 16px;
+      counter-reset: list-counter;
+      list-style-type: none;
+    }
+    .heroicList li {
+      position: relative;
+      margin-bottom: 8px;
+      padding-left: 24px;
+    }
+    .heroicList li::before {
+      content: counter(list-counter) " ";
+      counter-increment: list-counter;
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Disable the counter-based number shown in the top-left of each heroic card */
+    .heroicList li{ padding-left: 0; }
+    .heroicList li::before{ content: none; }
+
+    .heroicList{
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .heroicItem{
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .heroicRow{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      flex-wrap:wrap;
+    }
+
+    .heroicRank{
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    .heroicMeta{
+      color: rgba(244,240,230,.82);
+      font-size: 12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .heroicBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(186,12,47,.40);
+      background: rgba(186,12,47,.12);
+      color: rgba(244,240,230,.92);
+      font-size: 12px;
+    }
+
+    .heroicText{
+      margin-top: 10px;
+      color: rgba(244,240,230,.90);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .heroicBackground{
+      margin-top: 8px;
+      color: rgba(244,240,230,.86);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+
+    .heroicMedia{
+      margin-top: 10px;
+    }
+
+    .heroicVideo{
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 */
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+      background: rgba(0,0,0,.25);
+    }
+
+    .heroicVideo iframe{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      border:0;
+    }
+
+    .heroicPlaceholder{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height: 120px;
+      font-size: 12px;
+      color: rgba(244,240,230,.75);
+      border-radius: 12px;
+      border: 1px dashed rgba(255,255,255,.18);
+      background: rgba(0,0,0,.2);
+    }
+
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    /* Simple inline DAWG mark (SVG) so it works offline */
+    .dawgIcon {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <div class="brandRow" aria-label="Site title">
+          <span class="dawgIcon" aria-hidden="true">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Bulldog-anfas.svg/960px-Bulldog-anfas.svg.png?20091027223622" alt="" />
+          </span>
+          <h1>Dawg's Heroic Fourth Downs</h1>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div id="err" class="error">
+      <b>Could not load fourthDown_histograms.json</b>
+      <pre id="errText"></pre>
+    </div>
+
+    <div class="grid" style="margin-top:18px;">
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Choosing to go for it</h2>
+        <div class="hint">A short explainer for this exercise and how to read the charts below.</div>
+        <div class="introText">
+          <p>The punt is unusual in sports: it’s a voluntary handoff of possession, a chance for the other team to score. In a brutal game, teams sometimes choose to give up. A field goal at least puts points on the board, but it still feels like settling.</p>
+          <p>That’s why the third option, going for it on fourth down, is an emphatic statement. It says, “You can’t stop us.” Sure, you can have the ball back, but only after we’re seven points ahead.</p>
+          <p>Of course, coaches are calculating. The decision usually comes down to a few visible factors:</p>
+          <ul>
+            <li><b>Yards to goal:</b> Too far, and a failure donates points. Too close, and a field goal is the better bet... unless it’s inches and you try to punch it in.</li>
+            <li><b>Time left:</b> Early on, there’s little urgency. Late in the game, risk becomes attractive.</li>
+            <li><b>Score margin:</b> Ahead? Play it safe. Behind? Take risks to catch up.</li>
+            <li><b>Distance to first:</b> One yard is a very different ask than twenty.</li>
+          </ul>
+          <p>With all of that, sometimes going for it is just part of the normal flow chart. But coaches aren’t only rational, they’re also raging lunatics.</p>
+          <figure class="introGif">
+            <img src="https://c.tenor.com/NCQuBTKmlKcAAAAd/tenor.gif" alt="Kirby Smart fired up on the sideline" loading="lazy" />
+          </figure>
+          <p>That’s when they buck conventional wisdom, feed off the crowd, and refuse to give up the football.</p>
+          <p>The question this analysis asks: which moments in Georgia football history best exemplify that refusal? Can we rank the most heroic 4th-down attempts UGA has made, and converted?</p>
+          <p>Using play-by-play data of all CFB games since 2002, I charted the likelihood of going for it, punting, or attempting a field goal across those factors. Use the dropdowns below to see how a typical 4th-down decision is made. Those probabilities feed a scoring model (with some subjective weighting) to rank successful go-for-it plays. Scroll past the charts to see the top five for UGA.</p>
+          <p><em>Disclaimer:</em> This analysis is an inversion of Jon Bois/Secret Base’s “saddest punts” video. The dataset has some issues and my analysis might have holes as well, so consider this an imperfect exploration.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="controlGroup">
+        <div class="selectWrap">
+          <div class="selectLabel">View</div>
+          <select id="viewMode">
+            <option value="percent" selected>Percent (per bucket)</option>
+            <option value="count">Counts</option>
+          </select>
+        </div>
+
+        <div class="selectWrap">
+          <div class="selectLabel">Category</div>
+          <select id="datasetSelect">
+            <option value="byYardsToGoal" selected>Yards To Goal (YTG)</option>
+            <option value="byDistanceToFirstDown">Distance To 1st Down</option>
+            <option value="bySecondsLeftInGame">Seconds Left in Game</option>
+            <option value="byScoreDifferential">Score Differential (UGA - OPP)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="chips" aria-label="Legend">
+          <div class="chip"><span class="dot dot--punt"></span> Punt</div>
+          <div class="chip"><span class="dot dot--fg"></span> Field Goal</div>
+          <div class="chip"><span class="dot dot--gfi"></span> Went For It</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2 id="mainTitle">Yards To Goal</h2>
+        <div class="hint" id="mainHint">Stacked bars show share by decision within each bucket.</div>
+        <canvas id="mainChart"></canvas>
+      </div>
+
+      <div class="card">
+        <h2>Bucket totals</h2>
+        <div class="hint"># of plays in each bucket (all decision types combined).</div>
+        <canvas id="totalsChart"></canvas>
+      </div>
+
+      <div class="card">
+        <h2>Decision-type totals</h2>
+        <div class="hint">Total plays in this dataset by decision type (Punt/FG/WentForIt).</div>
+        <div class="chartSquare">
+          <canvas id="typeTotalsChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:18px;">
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Top 5 Heroic Georgia Fourth Downs</h2>
+        <div class="hint">Ranked from #5 to #1 by lowest predicted go-for-it probability (most unlikely = most heroic).</div>
+        <ol id="heroicList" class="heroicList"></ol>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = {
+      punt: getComputedStyle(document.documentElement).getPropertyValue('--punt').trim(),
+      fieldGoal: getComputedStyle(document.documentElement).getPropertyValue('--fg').trim(),
+      wentForIt: getComputedStyle(document.documentElement).getPropertyValue('--gfi').trim(),
+    };
+
+    const TYPE_LABELS = { punt: 'Punt', fieldGoal: 'Field Goal', wentForIt: 'Went For It' };
+
+    const STATE = {
+      json: null,
+      georgiaLikelihood: null,
+      charts: { main: null, totals: null, typeTotals: null },
+    };
+
+    function setError(msg) {
+      const el = document.getElementById('err');
+      const txt = document.getElementById('errText');
+      el.style.display = 'block';
+      txt.textContent = msg;
+    }
+
+    function clearError() {
+      document.getElementById('err').style.display = 'none';
+      document.getElementById('errText').textContent = '';
+    }
+
+    async function loadJson() {
+      try {
+        clearError();
+        const res = await fetch('./fourthDown_histograms.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        const data = await res.json();
+        STATE.json = data;
+        render();
+      } catch (e) {
+        setError(String(e) + "\n\nIf you opened this HTML as a file (file://), fetch() may be blocked. Use a local server.");
+      }
+    }
+
+    async function loadGeorgiaLikelihood() {
+      try {
+        const res = await fetch('./top5.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        const data = await res.json();
+        STATE.georgiaLikelihood = Array.isArray(data) ? data : [];
+        renderHeroicList();
+      } catch (e) {
+        setError(String(e));
+      }
+    }
+
+    function fmtPct(p) {
+      return `${(p * 100).toFixed(1)}%`;
+    }
+
+    function fmtTime(secondsLeftInGame) {
+      // seconds left in 60-min game
+      const s = Math.max(0, Math.floor(secondsLeftInGame));
+      const mm = Math.floor(s / 60);
+      const ss = s % 60;
+      return `${mm}:${String(ss).padStart(2, '0')}`;
+    }
+
+    function renderHeroicList() {
+      const listEl = document.getElementById('heroicList');
+      if (!listEl) return;
+
+      const rows = Array.isArray(STATE.georgiaLikelihood) ? STATE.georgiaLikelihood : [];
+      const ranked = rows
+        .map(r => ({
+          ...r,
+          smoothedRate: Number(r.smoothedRate ?? r.rawRate),
+          secondsLeftInGame: Number(r.secondsLeftInGame),
+          scoreDifferential: Number(r.scoreDifferential),
+          yardsToGoal: Number(r.yardsToGoal),
+          distanceToFirstDown: Number(r.distanceToFirstDown),
+        }))
+        .filter(r => Number.isFinite(r.smoothedRate))
+        .sort((a, b) => a.smoothedRate - b.smoothedRate);
+
+      const top5 = ranked.slice(0, 5);
+      const ordered = [...top5].reverse(); // 5 -> 1
+
+      listEl.innerHTML = '';
+
+      if (!ordered.length) {
+        listEl.innerHTML = '<li class="heroicItem"><div class="heroicText">No Georgia successful go-for-it plays found.</div></li>';
+        return;
+      }
+
+      ordered.forEach((p, idx) => {
+        const rank = ordered.length - idx; // visual rank number (5..1)
+
+        const prob = Number(p.smoothedRate ?? 0);
+        const ytg = p.yardsToGoal;
+        const diff = p.scoreDifferential;
+        const time = p.secondsLeftInGame;
+        const dist = p.distanceToFirstDown;
+        const playText = p.playText || '';
+        const playBackground = p.playBackground;
+        const videoUrl = p.videoUrl;
+        const embedUrl = toEmbedUrl(videoUrl);
+        const backgroundText = (playBackground && String(playBackground).trim())
+          ? playBackground
+          : 'Background: This play is a turning point in the season. Add a short narrative about the stakes, opponent, and why this moment mattered.';
+
+        const backgroundHtml = escapeHtml(backgroundText).replace(/\n/g, '<br>');
+
+        const li = document.createElement('li');
+        li.className = 'heroicItem';
+        li.innerHTML = `
+          <div class="heroicRow">
+            <div class="heroicRank">#${rank}</div>
+            <div class="heroicMeta">
+              <span class="heroicBadge">P(go for it): <span class="mono">${fmtPct(prob)}</span></span>
+              <span class="heroicBadge">YTG: <span class="mono">${ytg}</span></span>
+              <span class="heroicBadge">To-go: <span class="mono">${dist ?? 'n/a'}</span></span>
+              <span class="heroicBadge">Score diff (UGA - Opp): <span class="mono">${diff}</span></span>
+              <span class="heroicBadge">Time left: <span class="mono">${fmtTime(time)}</span></span>
+            </div>
+          </div>
+          <div class="heroicText">${escapeHtml(playText)}</div>
+          <div class="heroicBackground">${backgroundHtml}</div>
+          <div class="heroicMedia">
+            ${embedUrl
+              ? `<div class="heroicVideo"><iframe src="${escapeAttribute(embedUrl)}" title="UGA fourth-down highlight" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`
+              : '<div class="heroicPlaceholder">Video embed will appear here once a YouTube link is added.</div>'}
+          </div>
+        `;
+        listEl.appendChild(li);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function escapeAttribute(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    function toEmbedUrl(url) {
+      if (!url) return '';
+      const raw = String(url).trim();
+      if (!raw) return '';
+
+      try {
+        const u = new URL(raw);
+        const start = getYouTubeStartSeconds(u);
+        const startParam = start ? `?start=${start}` : '';
+        if (u.hostname.includes('youtu.be')) {
+          const id = u.pathname.replace('/', '');
+          return id ? `https://www.youtube.com/embed/${id}${startParam}` : '';
+        }
+
+        if (u.hostname.includes('youtube.com')) {
+          const id = u.searchParams.get('v');
+          if (id) return `https://www.youtube.com/embed/${id}${startParam}`;
+          if (u.pathname.startsWith('/embed/')) return start ? `${raw}${raw.includes('?') ? '&' : '?'}start=${start}` : raw;
+        }
+      } catch {
+        return '';
+      }
+
+      return '';
+    }
+
+    function getYouTubeStartSeconds(u) {
+      const t = u.searchParams.get('t') || u.searchParams.get('start');
+      if (!t) return 0;
+
+      // Support seconds or timestamp like 1h2m3s
+      if (/^\d+$/.test(t)) return Number(t);
+
+      const match = t.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/i);
+      if (!match) return 0;
+
+      const hours = Number(match[1] || 0);
+      const minutes = Number(match[2] || 0);
+      const seconds = Number(match[3] || 0);
+      return (hours * 3600) + (minutes * 60) + seconds;
+    }
+
+
+    function getSelectedDatasetKey() {
+      return document.getElementById('datasetSelect').value;
+    }
+
+    function getViewMode() {
+      return document.getElementById('viewMode').value; // 'percent' | 'count'
+    }
+
+    function datasetTitle(key) {
+      if (key === 'byYardsToGoal') return 'Yards To Goal (YTG)';
+      if (key === 'byDistanceToFirstDown') return 'Distance To 1st Down';
+      if (key === 'bySecondsLeftInGame') return 'Seconds Left in Game';
+      if (key === 'byScoreDifferential') return 'Score Differential (UGA - OPP)';
+      return key;
+    }
+
+    function destroyCharts() {
+      for (const k of Object.keys(STATE.charts)) {
+        const c = STATE.charts[k];
+        if (c) c.destroy();
+        STATE.charts[k] = null;
+      }
+    }
+
+    function toPercentTick(v) {
+      return `${Math.round(v * 100)}%`;
+    }
+
+    function render() {
+      if (!STATE.json) return;
+
+      const datasetKey = getSelectedDatasetKey();
+      const mode = getViewMode();
+      const d = STATE.json[datasetKey];
+      if (!d) return;
+
+      document.getElementById('mainTitle').textContent = datasetTitle(datasetKey);
+      document.getElementById('mainHint').textContent = mode === 'percent'
+        ? 'Stacked bars show share by decision within each bucket.'
+        : 'Stacked bars show raw counts by decision within each bucket.';
+
+      const labels = d.bins.map(b => b.label);
+
+      // main stacked bars (3 datasets)
+      const series = ['punt', 'fieldGoal', 'wentForIt'].map(typeKey => {
+        const data = labels.map(lbl => {
+          if (mode === 'percent') return d.percentages?.[typeKey]?.[lbl] ?? 0;
+          return d.counts?.[typeKey]?.[lbl] ?? 0;
+        });
+
+        return {
+          label: TYPE_LABELS[typeKey] ?? typeKey,
+          data,
+          backgroundColor: COLORS[typeKey],
+          borderColor: 'rgba(255,255,255,.10)',
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false,
+          stack: 'stack1',
+        };
+      });
+
+      const bucketTotals = labels.map(lbl => d.totalsByBucket?.[lbl] ?? 0);
+
+      const typeTotalsLabels = ['punt', 'fieldGoal', 'wentForIt'].map(k => TYPE_LABELS[k]);
+      const typeTotals = ['punt', 'fieldGoal', 'wentForIt'].map(k => d.totalsByType?.[k] ?? 0);
+
+      destroyCharts();
+
+      const commonGrid = {
+        color: 'rgba(255,255,255,.08)',
+        tickColor: 'rgba(255,255,255,.08)',
+      };
+
+      const tooltipTheme = {
+        backgroundColor: 'rgba(0,0,0,.92)',
+        borderColor: 'rgba(255,255,255,.14)',
+        borderWidth: 1,
+        titleColor: 'rgba(244,240,230,.95)',
+        bodyColor: 'rgba(244,240,230,.92)',
+      };
+
+      const tickColor = 'rgba(244,240,230,.82)';
+
+      const ctxMain = document.getElementById('mainChart');
+      STATE.charts.main = new Chart(ctxMain, {
+        type: 'bar',
+        data: { labels, datasets: series },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              ...tooltipTheme,
+              callbacks: {
+                label: (ctx) => {
+                  const v = ctx.raw;
+                  return mode === 'percent'
+                    ? `${ctx.dataset.label}: ${(v * 100).toFixed(1)}%`
+                    : `${ctx.dataset.label}: ${v}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              grid: { display: false },
+              ticks: { color: tickColor, maxRotation: 0, autoSkip: true },
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              grid: commonGrid,
+              ticks: {
+                color: tickColor,
+                callback: mode === 'percent' ? (v) => toPercentTick(v) : undefined,
+              },
+              suggestedMax: mode === 'percent' ? 1 : undefined,
+              max: mode === 'percent' ? 1 : undefined,
+            }
+          }
+        }
+      });
+
+      // bucket totals (line)
+      const ctxTotals = document.getElementById('totalsChart');
+      STATE.charts.totals = new Chart(ctxTotals, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Bucket total',
+            data: bucketTotals,
+            borderColor: 'rgba(186,12,47,.95)',
+            backgroundColor: 'rgba(186,12,47,.18)',
+            tension: 0.25,
+            fill: true,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: tooltipTheme,
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: tickColor, autoSkip: true } },
+            y: { grid: commonGrid, ticks: { color: tickColor }, beginAtZero: true },
+          }
+        }
+      });
+
+      // type totals (doughnut)
+      const ctxTypeTotals = document.getElementById('typeTotalsChart');
+      STATE.charts.typeTotals = new Chart(ctxTypeTotals, {
+        type: 'doughnut',
+        data: {
+          labels: typeTotalsLabels,
+          datasets: [{
+            data: typeTotals,
+            backgroundColor: [COLORS.punt, COLORS.fieldGoal, COLORS.wentForIt],
+            borderColor: 'rgba(255,255,255,.10)',
+            borderWidth: 1,
+            hoverOffset: 6,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          aspectRatio: 1,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: tickColor, boxWidth: 12, boxHeight: 12 }
+            },
+            tooltip: tooltipTheme,
+          },
+          cutout: '62%'
+        }
+      });
+
+      // NOTE: heroic list is rendered by renderHeroicList() after JSON load.
+      // (Removed older duplicate renderer that expected different field names.)
+    }
+
+    document.getElementById('datasetSelect').addEventListener('change', render);
+    document.getElementById('viewMode').addEventListener('change', render);
+
+    loadJson();
+    loadGeorgiaLikelihood();
+  </script>
+</body>
+</html>
